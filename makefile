@@ -6,6 +6,9 @@ ITKSNAP=vglrun /opt/apps/itksnap/itksnap-3.2.0-20141023-Linux-x86_64/bin/itksnap
 # load data file
 -include datalocation/dependencies
 datalocation/dependencies: loaddata.sql
+	$(MYSQL) --local-infile < $< 
+
+
 	@echo sqlite3 -init $<
 	sqlite3 list < loaddata.sql | sed 's/"//g;s/IPVL_research_anno\///g;s/.annotationSignature.nii.gz//g' >  $@
 	
