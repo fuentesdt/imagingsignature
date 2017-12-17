@@ -1,0 +1,10 @@
+
+Usage
+=====
+
+make -k -i nifti
+
+mysql  -re "call RandomForestHCCResponse.CRCPyRadMatrix ();"     | sed "s/\t/,/g;s/NULL//g" > datalocation/pyradiomics.csv
+
+pyradiomicsbatch datalocation/pyradiomics.csv datalocation/pyradiomicsout.csv
+

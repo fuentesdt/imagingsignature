@@ -1,3 +1,5 @@
+-- mysql --local-infile < loaddata.sql
+
 use RandomForestHCCResponse;
 DROP TABLE IF EXISTS RandomForestHCCResponse.crcmutations;
 CREATE TABLE RandomForestHCCResponse.crcmutations(
@@ -48,7 +50,8 @@ DELIMITER //
 CREATE PROCEDURE RandomForestHCCResponse.CRCMutDependencies
 ()
 BEGIN
-  select concat("ANNOTATIONS=" , group_concat(an.niftypath,' ')) from RandomForestHCCResponse.crcannotations an where  an.filename != 'filename';
+  SET SESSION group_concat_max_len = 10000000;
+  select concat("ANNOTATIONS=" , group_concat( replace(replace(an.niftypath,'IPVL_research_anno/',''),'.annotationSignature.nii.gz','') separator ' ')) from RandomForestHCCResponse.crcannotations an where  an.filename != 'filename';
 END //
 DELIMITER ;
 
@@ -64,10 +67,10 @@ BEGIN
   select ca.mrn,ca.studydate ,cm.MutationalStatus, 
          concat_WS('/','/rsrch1/ip/dtfuentes/github/imagingsignature/ImageDatabase',ca.Image ) Image , 
          concat_WS('/','/rsrch1/ip/dtfuentes/github/imagingsignature/ImageDatabase',ca.Mask  ) Mask, 
-         lk.labelID Label,
+         lk.labelID Label
    from  RandomForestHCCResponse.crcannotations ca 
-   join  RandomForestHCCResponse.crcmutations   cm   on ca.mrn=cm.mrn and ca.studydate=cm.ImageDate 
-   join   RandomForestHCCResponse.liverLabelKey    lk on lk.labelID in (2,3,4);
+   join  RandomForestHCCResponse.crcmutations   cm on ca.mrn=cm.mrn and ca.studydate=cm.ImageDate 
+   join  RandomForestHCCResponse.liverLabelKey  lk on lk.labelID in (254);
 END //
 DELIMITER ;
--- mysql  -re "call RandomForestHCCResponse.PyRadiomicsMatrix ();"     | sed "s/\t/,/g;s/NULL//g" > datalocation/pyradiomics.csv
+-- mysql  -re "call RandomForestHCCResponse.CRCPyRadMatrix ();"     | sed "s/\t/,/g;s/NULL//g" > datalocation/pyradiomics.csv
