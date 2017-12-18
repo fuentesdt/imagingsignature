@@ -8,3 +8,7 @@ mysql  -re "call RandomForestHCCResponse.CRCPyRadMatrix ();"     | sed "s/\t/,/g
 
 pyradiomicsbatch datalocation/pyradiomics.csv datalocation/pyradiomicsout.csv
 
+R markdown classifier:
+
+require(rmarkdown)
+rmarkdown::render(dataMatrixModeling_binary.RMD, output_file = "myfile.pdf")
