@@ -11,7 +11,7 @@ annotation_img = Image.new('L', image_size, 0)
 d = ImageDraw.Draw(annotation_img)
 #DRAW CIRCLE
 print("this is circle data given in center,radius")
-cdata = [0.,0.,5.,5.]
+cdata = [80.,80.,50.,50.]
 print (cdata)
 x1 = cdata[0]
 y1 = cdata[1]
