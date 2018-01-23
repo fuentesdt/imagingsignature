@@ -1,3 +1,4 @@
+SHELL := /bin/bash
 ROOTDIR=/rsrch1/ip/dtfuentes/github/imagingsignature
 C3DEXE=/rsrch2/ip/dtfuentes/bin/c3d
 WORKDIR=ImageDatabase
@@ -10,15 +11,16 @@ datalocation/dependencies: loaddata.sql
 	$(MYSQL) --local-infile < $< 
 	$(MYSQL) -sNre "call RandomForestHCCResponse.CRCMutDependencies();"  > $@
 
-#nifti:  $(RAWVEN)
-nifti:   $(addprefix $(WORKDIR)/,$(addsuffix /Ven.raw.nii.gz,$(CRCMETTRAIN)))
-nnmodels:     $(addprefix $(WORKDIR)/,$(addsuffix /Cascade/LABELSNN.nii.gz,$(CRCMET)))
+nifti:  $(RAWVEN)
+#nifti:   $(addprefix $(WORKDIR)/,$(addsuffix /Ven.raw.nii.gz,$(CRCMETTRAIN)))
+#nifti:   $(addprefix $(WORKDIR)/,$(addsuffix /Ven.raw.nii.gz,$(CRCMETTEST)))
+nnmodels:     $(addprefix $(WORKDIR)/,$(addsuffix /Cascade/LABELSNN.nii.gz,$(CRCMETTRAIN)))
 
 $(WORKDIR)/%/raw.xfer:
 	mkdir -p $(@D)
 	# when using -B option to rebuild from scratch, skip network file system access if files available
 	if [ ! -d /FUS4/IPVL_research/$*  ] ; then \
-          if [ `date +%H` -le 6 ] || [ `date +%H` -ge 16 ] || [[ `date +%A` == "Saturday" ]] || [[ `date +%A` == "Sunday" ]]; then \
+          if [ `date +%H` -le 6 ] || [ `date +%H` -ge 13 ] || [[ `date +%A` == "Saturday" ]] || [[ `date +%A` == "Sunday" ]]; then \
             movescu -v -S -k 0008,0052=SERIES -aet ipvl_research -aec Stentor_QRP 192.168.5.55 107 -k 0020,000d=$(word 3,$(subst /, ,$*)) -k 0020,000e=$(lastword  $(subst /, ,$*)); else echo 'waiting for off-peak hours... ';  fi; else echo skipping network filesystem; fi
 	if [   -d /FUS4/IPVL_research/$*  ] ; then touch -r /FUS4/IPVL_research/$* $@  ; fi
 	
