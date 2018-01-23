@@ -49,11 +49,16 @@ BEGIN
   SET SESSION group_concat_max_len = 10000000;
   
     select concat("NUMCRCMET =",count(rf.studyUID)) from RandomForestHCCResponse.crcmutations rf;
-    select concat("CRCMET    =", group_concat(
+    select concat("CRCMETTRAIN =", group_concat(
            CONCAT_WS('/',rf.mrn,  REPLACE(rf.ImageDate, '-', ''), rf.StudyUID  ) 
                                 separator ' ') )
     from RandomForestHCCResponse.crcmutations rf
-    where rf.SeriesACQVen is not null;
+    where rf.SeriesACQVen is not null and (rf.MutationalStatus = 'WT' or rf.MutationalStatus = 'mut');
+    select concat("CRCMETTEST =", group_concat(
+           CONCAT_WS('/',rf.mrn,  REPLACE(rf.ImageDate, '-', ''), rf.StudyUID  ) 
+                                separator ' ') )
+    from RandomForestHCCResponse.crcmutations rf
+    where rf.SeriesACQVen is not null and (rf.MutationalStatus != 'WT' and rf.MutationalStatus != 'mut');
 
     select concat("NUMRAWVEN =",count(rf.SeriesACQVen)) from RandomForestHCCResponse.crcmutations rf where rf.SeriesACQVen is not null and rf.ImageDate is not null ;
     select concat("RAWVEN  =", group_concat( distinct
@@ -61,7 +66,6 @@ BEGIN
                               separator ' ') )
     from RandomForestHCCResponse.crcmutations rf
     where rf.SeriesACQVen is not null and rf.ImageDate is not null ;
-    select 'nifti:  $(RAWVEN) ';
 
     -- convert to nifti 
     select CONCAT('ImageDatabase/', a.mrn, '/', REPLACE(a.StudyDate, '-', ''),'/', a.StudyUID, '/', a.Phase ,'.raw.nii.gz: ImageDatabase/', a.mrn, '/', REPLACE(a.StudyDate, '-', ''),'/', a.StudyUID, '/',a.SeriesUID, '/raw.xfer \n\tif [ ! -f ImageDatabase/', a.mrn, '/', REPLACE(a.StudyDate, '-', ''),'/', a.StudyUID, '/',a.SeriesUID,'/',a.SeriesACQ,'.nii.gz   ] ; then mkdir -p ImageDatabase/', a.mrn, '/', REPLACE(a.StudyDate, '-', ''),'/', a.StudyUID, '/',a.SeriesUID,' ;$(DCMNIFTISPLIT) $(subst ImageDatabase,/FUS4/IPVL_research,$(<D)) $(@D)  \'0008|0032\' ; else echo skipping network filesystem; fi\n\tln -snf ./',a.SeriesUID,'/',a.SeriesACQ,'.nii.gz $@; touch -h -r $(@D)/',a.SeriesUID,'/',a.SeriesACQ,'.nii.gz  $@;\n\tln -snf ./',a.SeriesUID,'/ $(subst .nii.gz,.dir,$@)') 

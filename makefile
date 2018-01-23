@@ -10,6 +10,10 @@ datalocation/dependencies: loaddata.sql
 	$(MYSQL) --local-infile < $< 
 	$(MYSQL) -sNre "call RandomForestHCCResponse.CRCMutDependencies();"  > $@
 
+#nifti:  $(RAWVEN)
+nifti:   $(addprefix $(WORKDIR)/,$(addsuffix /Ven.raw.nii.gz,$(CRCMETTRAIN)))
+nnmodels:     $(addprefix $(WORKDIR)/,$(addsuffix /Cascade/LABELSNN.nii.gz,$(CRCMET)))
+
 $(WORKDIR)/%/raw.xfer:
 	mkdir -p $(@D)
 	# when using -B option to rebuild from scratch, skip network file system access if files available
@@ -22,7 +26,7 @@ $(WORKDIR)/%/raw.xfer:
 # apply deep learning model 
 $(WORKDIR)/%/Cascade/LABELSNN.nii.gz: 
 	mkdir -p $(@D)
-	python Code/cascaded_unet_inference.py --imagefile=$(WORKDIR)/$*/Ven.raw.nii.gz --segmentation=$@
+	python ./cascaded_unet_inference.py --imagefile=$(WORKDIR)/$*/Ven.raw.nii.gz --segmentation=$@
 
 $(WORKDIR)/%/view:
 	$(ITKSNAP) -g  $(WORKDIR)/$*/Ven.raw.nii.gz -s  $(WORKDIR)/$*/Cascade/LABELSNN.nii.gz
