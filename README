@@ -13,7 +13,7 @@ mysql  -re "call RandomForestHCCResponse.CRCPyRadMatrix ();"     | sed "s/\t/,/g
 
 process image features
 =====
-pyradiomicsbatch datalocation/pyradiomics.csv datalocation/pyradiomicsout.csv
+pyradiomicsbatch -v 5 datalocation/pyradiomics.csv datalocation/pyradiomicsout.csv
 
 compute classifier
 =====

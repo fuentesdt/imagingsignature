@@ -17,6 +17,9 @@ nifti:  $(RAWVEN)
 #nnmodels:     $(addprefix $(WORKDIR)/,$(addsuffix /Cascade/LABELSNN.nii.gz,$(CRCMETTRAIN)))
 nnmodels:   $(addprefix $(WORKDIR)/,$(addsuffix /Cascade/LABELSNN.nii.gz,$(CRCMETTRAIN))) $(addprefix $(WORKDIR)/,$(addsuffix /Cascade/LABELSNN.nii.gz,$(CRCMETTEST)))
 
+checkxfer:  
+	ls $(addprefix $(WORKDIR)/,$(addsuffix /Ven.raw.nii.gz,$(CRCMETTRAIN))) | wc
+
 $(WORKDIR)/%/raw.xfer:
 	mkdir -p $(@D)
 	# when using -B option to rebuild from scratch, skip network file system access if files available

@@ -1,3 +1,4 @@
+#'   > source('datamatrixModeling_binary.R')
 #' ---	
 #' title: "Data Matrix Modeling"	
 #' output: pdf_document	
@@ -39,20 +40,60 @@
 #' 	
 #' 	
 #' 	
+rm(list=ls())
+options("width"=180)
+
+stopQuietly <- function(...)
+  {
+  blankMsg <- sprintf( "\r%s\r", paste( rep(" ", getOption( "width" ) - 1L ), collapse = " ") );
+  stop( simpleError( blankMsg ) );
+  } # stopQuietly()
+
+args <- commandArgs( trailingOnly = TRUE )
+args <- c( "datalocation/pyradiomicsout.csv","MutationalStatus")
 	
-#cat(paste("Target Variable: ",params$target, "\n", "Input File: ", params$csvPath))	
+if( length( args ) < 2 )
+  {
+  cat( "Usage: Rscript datamatrixModeling_binary.R inputFileList outputModelPrefix ",
+       "<numberOfThreads=4> <trainingPortion=1.0> <numberOfSamplesPerLabel=1000> ",
+       "<numberOfTreesPerThread=1000> <numberOfUniqueLabels=NA>", sep = "" )
+  stopQuietly()
+  }
+params <- new.env(parent = baseenv())
+
+params$csvPath         <-  args[1] 
+params$target          <-  args[2] 
+# TODO - FIXME - READ from cmd line ? 
+params$inputs          <-  readRDS("./features.RDS")	
+params$plot            <-  TRUE	
+params$leaveOneOut     <-  FALSE	
+params$rescale         <-  TRUE	
+params$removeCorrelated<-  TRUE	
+params$semisupervised  <-  FALSE	
+params$kClusters       <-  as.numeric(9)	
+params$genetic         <-  FALSE	
+params$boruta          <-  TRUE	
+params$univariate      <-  TRUE	
 	
-# WIP reduce number of packages	
 	
+# install.packages("caret",repos='http://cran.us.r-project.org')
+# install.packages("knitr",repos='http://cran.us.r-project.org')
+# install.packages("e1071",repos='http://cran.us.r-project.org')
+# install.packages("randomForest",repos='http://cran.us.r-project.org')
+# install.packages("xgboost",repos='http://cran.us.r-project.org')
+# install.packages(c("leaps","corrplot","gridExtra","pROC","subselect"),repos='http://cran.us.r-project.org')
 libs <- c("caret", "kernlab", "knitr", "e1071", "magrittr", "rpart", "nnet", "parallel",	
 "randomForest", "xgboost", "Boruta", "leaps", "MASS",	
 "ranger", "cluster", "subselect", "corrplot", "gridExtra","pROC")	
 	
-invisible(lapply(libs, require,character.only=T))	
+lapply(libs, require,character.only=T)
 set.seed(25)	
 	
 #Load data	
-datamatrix <- read.csv(params$csvPath, na.strings = "NULL")	
+datamatrixfull <- read.csv(params$csvPath, na.strings = "NULL")	
+datamatrix <- subset(datamatrixfull,MutationalStatus != "Experimental cohort")
+datamatrix$MutationalStatus  =  droplevels(datamatrix$MutationalStatus ) 
+
 if(is.null(params$inputs)){	
   print("No input columns specified, using all non-target columns")	
   params$inputs <- setdiff(names(datamatrix),params$target)	
@@ -414,19 +455,3 @@ if(params$leaveOneOut){
   kable(coords(roc=ROC1, x = "best", ret=c('threshold','sens', 'spec')))	
   	
 }	
-#' 	
-#' 	
-#' 	
-#' 	
-#' 	
-#' 	
-#' 	
-#' 	
-#' 	
-#' 	
-#' 	
-#' 	
-#' 	
-#' 	
-#' 	
-#' 	
