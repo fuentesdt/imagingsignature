@@ -4,45 +4,47 @@ use RandomForestHCCResponse;
 DROP TABLE IF EXISTS RandomForestHCCResponse.crcmutations;
 CREATE TABLE RandomForestHCCResponse.crcmutations(
   MRN	             int not null,
-  ImageDate	             date not null,
-  AccessionNumber             int not null,
   MutationalStatus             text not null,
-  APC             int not null,
-  KRAS             int not null,
-  TP53             int not null,
-  PIK3CA             int not null 
-) SELECT JSON_UNQUOTE(data->"$.""MRN""") MRN,
-       JSON_UNQUOTE(data->"$.""Image Date""") ImageDate,
-       JSON_UNQUOTE(data->"$.""Image Accession Number""") ImageAccession,
-       JSON_UNQUOTE(data->"$.""Mutational status""") MutationalStatus,
-       JSON_UNQUOTE(data->"$.""APC""")  APC,
-       JSON_UNQUOTE(data->"$.""KRAS""") KRAS,
-       JSON_UNQUOTE(data->"$.""TP53""") TP53,
-       JSON_UNQUOTE(data->"$.""PIK3CA""") PIK3CA
-       FROM ClinicalStudies.excelUpload where uploadID = 79 and JSON_UNQUOTE(data->"$.""MRN""")  is not null;
-
-
-
-DROP TABLE IF EXISTS RandomForestHCCResponse.crcannotations;
-CREATE TABLE RandomForestHCCResponse.crcannotations(
-  mrn              int   GENERATED ALWAYS AS ( substring_index(substring_index(niftypath,'/',2),'/',-1) ) COMMENT 'PT UID'                    ,
-  Image            text  GENERATED ALWAYS AS ( replace(substring_index(substring_index(ca.niftypath,'/',6),'/',-5),'.annotationSignature.nii.gz','/image.nii.gz')     ) COMMENT 'image file',
-  Mask             text  GENERATED ALWAYS AS ( replace(substring_index(substring_index(ca.niftypath,'/',6),'/',-5),'.annotationSignature.nii.gz','/annotation.nii.gz')) COMMENT 'mask file',
-  filename         TEXT NOT NULL,
-  niftypath         TEXT NOT NULL,
-  ReferenceSOPUID   TEXT NOT NULL,
-  StudyUID         TEXT NOT NULL,
-  SeriesUID         TEXT NOT NULL,
-  StudyDate         Date NOT NULL
+  ImageDate	             DATE         NULL COMMENT 'Study Date',
+  StudyUID            VARCHAR(256)  not NULL  COMMENT 'study UID'              ,
+  SeriesUIDVen        VARCHAR(256)         NULL  COMMENT 'series UID'             ,
+  SeriesACQVen        VARCHAR(256)         NULL  COMMENT 'series acquisition time',
+  PRIMARY KEY (StudyUID) 
 );
--- load data
-LOAD DATA LOCAL INFILE 'datalocation/phiannotations.csv'
-INTO TABLE RandomForestHCCResponse.crcannotations
-FIELDS TERMINATED BY '\t'
-LINES TERMINATED BY '\n'
-IGNORE 1 LINES
-( filename        , niftypath       , ReferenceSOPUID , StudyUID        , SeriesUID       , StudyDate       );
--- SET scandate = STR_TO_DATE(@var1,'%m/%d/%Y'),fustudydate = STR_TO_DATE(@fustudydate,'%m/%d/%Y'), LesionLocation='RT FRONTAL' ;
+
+-- ignore duplicates
+insert ignore into RandomForestHCCResponse.crcmutations( MRN ,MutationalStatus ,ImageDate	 ,StudyUID      ,SeriesUIDVen ,SeriesACQVen)
+ SELECT JSON_UNQUOTE(eu.data->"$.""MRN""") MRN,
+         JSON_UNQUOTE(data->"$.""Triple status""") MutationalStatus , 
+         JSON_UNQUOTE(eu.data->"$.""Image Date""") ImageDate,
+         JSON_UNQUOTE(eu.data->"$.""Study UID""") StudyUID,
+         replace(substring_index( json_unquote(eu.data->'$."VEN Series UID"'), ':', 1),'{','') SeriesUIDVen,
+         replace(substring_index( json_unquote(eu.data->'$."VEN Series UID"'), ':',-1),'}','') SeriesACQVen 
+         FROM ClinicalStudies.excelUpload eu where eu.uploadID = 84  and JSON_UNQUOTE(eu.data->"$.""Study UID""") is not null;
+
+-- error check duplicates
+insert into Metadata.Singular(id)
+(select si.id from Metadata.Singular si join(
+   select * from RandomForestHCCResponse.crcmutations cm where cm.StudyUID=cm.SeriesUIDVen
+                                            ) b );
+
+-- verify 14 WT  did not get deleted on insert
+insert into Metadata.Singular(id)
+(select si.id from Metadata.Singular si join(
+   select count( rf.StudyUID) numtruth from RandomForestHCCResponse.crcmutations rf where rf.MutationalStatus = 'WT'
+                                   ) b on b.numtruth !=14 );
+
+-- verify 24 mut  did not get deleted on insert
+insert into Metadata.Singular(id)
+(select si.id from Metadata.Singular si join(
+   select count( rf.StudyUID) numtruth from RandomForestHCCResponse.crcmutations rf where rf.MutationalStatus = 'mut'
+                                   ) b on b.numtruth !=24 );
+
+-- use dicomheaders as dflt study date for each
+update RandomForestHCCResponse.crcmutations rf
+  join DICOMHeaders.studies  sd     on sd.StudyInstanceUID=rf.StudyUID
+   SET rf.ImageDate=coalesce(sd.StudyDate,rf.ImageDate);
+
 
 
 DROP PROCEDURE IF EXISTS RandomForestHCCResponse.CRCMutDependencies;
@@ -51,12 +53,38 @@ CREATE PROCEDURE RandomForestHCCResponse.CRCMutDependencies
 ()
 BEGIN
   SET SESSION group_concat_max_len = 10000000;
-  select concat("ANNOTATIONS=" , group_concat( replace(replace(an.niftypath,'IPVL_research_anno/',''),'.annotationSignature.nii.gz','') separator ' ')) from RandomForestHCCResponse.crcannotations an where  an.filename != 'filename';
+  
+    select concat("NUMCRCMET =",count(rf.studyUID)) from RandomForestHCCResponse.crcmutations rf;
+    select concat("CRCMETTRAIN =", group_concat(
+           CONCAT_WS('/',rf.mrn,  REPLACE(rf.ImageDate, '-', ''), rf.StudyUID  ) 
+                                separator ' ') )
+    from RandomForestHCCResponse.crcmutations rf
+    where rf.SeriesACQVen is not null and (rf.MutationalStatus = 'WT' or rf.MutationalStatus = 'mut');
+    select concat("CRCMETTEST =", group_concat(
+           CONCAT_WS('/',rf.mrn,  REPLACE(rf.ImageDate, '-', ''), rf.StudyUID  ) 
+                                separator ' ') )
+    from RandomForestHCCResponse.crcmutations rf
+    where rf.SeriesACQVen is not null and (rf.MutationalStatus != 'WT' and rf.MutationalStatus != 'mut');
+
+    select concat("NUMRAWVEN =",count(rf.SeriesACQVen)) from RandomForestHCCResponse.crcmutations rf where rf.SeriesACQVen is not null and rf.ImageDate is not null ;
+    select concat("RAWVEN  =", group_concat( distinct
+           CONCAT_WS('/','ImageDatabase', rf.mrn,  REPLACE(rf.ImageDate, '-', ''), rf.StudyUID, 'Ven.raw.nii.gz ' ) 
+                              separator ' ') )
+    from RandomForestHCCResponse.crcmutations rf
+    where rf.SeriesACQVen is not null and rf.ImageDate is not null ;
+
+    -- convert to nifti 
+    select CONCAT('ImageDatabase/', a.mrn, '/', REPLACE(a.StudyDate, '-', ''),'/', a.StudyUID, '/', a.Phase ,'.raw.nii.gz: ImageDatabase/', a.mrn, '/', REPLACE(a.StudyDate, '-', ''),'/', a.StudyUID, '/',a.SeriesUID, '/raw.xfer \n\tif [ ! -f ImageDatabase/', a.mrn, '/', REPLACE(a.StudyDate, '-', ''),'/', a.StudyUID, '/',a.SeriesUID,'/',a.SeriesACQ,'.nii.gz   ] ; then mkdir -p ImageDatabase/', a.mrn, '/', REPLACE(a.StudyDate, '-', ''),'/', a.StudyUID, '/',a.SeriesUID,' ;$(DCMNIFTISPLIT) $(subst ImageDatabase,/FUS4/IPVL_research,$(<D)) $(@D)  \'0008|0032\' ; else echo skipping network filesystem; fi\n\tln -snf ./',a.SeriesUID,'/',a.SeriesACQ,'.nii.gz $@; touch -h -r $(@D)/',a.SeriesUID,'/',a.SeriesACQ,'.nii.gz  $@;\n\tln -snf ./',a.SeriesUID,'/ $(subst .nii.gz,.dir,$@)') 
+    from (
+          select rf.mrn,'Ven' as Phase,rf.Imagedate as StudyDate,rf.StudyUID as StudyUID,rf.SeriesUIDVen as SeriesUID,rf.SeriesACQVen as SeriesACQ from RandomForestHCCResponse.crcmutations rf
+         ) a
+    where a.SeriesACQ is not null 
+    group by a.SeriesUID, a.SeriesACQ;
 END //
 DELIMITER ;
 
 -- show create procedure RandomForestHCCResponse.CRCMutDependencies;
--- mysql  -re "call RandomForestHCCResponse.CRCMutDependencies();"| sed "s/NULL//g" >  datalocation/dependencies
+-- mysql  -sNre  "call RandomForestHCCResponse.CRCMutDependencies();"| sed "s/NULL//g" >  datalocation/dependencies
 
 DROP PROCEDURE IF EXISTS RandomForestHCCResponse.CRCPyRadMatrix ;
 DELIMITER //
@@ -64,13 +92,12 @@ CREATE PROCEDURE RandomForestHCCResponse.CRCPyRadMatrix
 (  )
 BEGIN
    -- select  a.mrn, a.TIMEID, sd.studyInstanceUID, lk.location,  
-  select ca.mrn,ca.studydate ,cm.MutationalStatus, 
-         concat_WS('/','/rsrch1/ip/dtfuentes/github/imagingsignature/ImageDatabase',ca.Image ) Image , 
-         concat_WS('/','/rsrch1/ip/dtfuentes/github/imagingsignature/ImageDatabase',ca.Mask  ) Mask, 
+  select cm.mrn,cm.imagedate ,cm.MutationalStatus, 
+         concat_WS('/','/rsrch1/ip/dtfuentes/github/imagingsignature/ImageDatabase',cm.mrn,REPLACE(cm.ImageDate, '-', ''),cm.StudyUID,'/Ven.raw.nii.gz') Image , 
+         concat_WS('/','/rsrch1/ip/dtfuentes/github/imagingsignature/ImageDatabase',cm.mrn,REPLACE(cm.ImageDate, '-', ''),cm.StudyUID,'/Cascade/LABELSNN.nii.gz') Mask, 
          lk.labelID Label
-   from  RandomForestHCCResponse.crcannotations ca 
-   join  RandomForestHCCResponse.crcmutations   cm on ca.mrn=cm.mrn and ca.studydate=cm.ImageDate 
-   join  RandomForestHCCResponse.liverLabelKey  lk on lk.labelID in (254);
+   from  RandomForestHCCResponse.crcmutations   cm 
+   join  RandomForestHCCResponse.liverLabelKey  lk on lk.labelID in (2);
 END //
 DELIMITER ;
 -- mysql  -re "call RandomForestHCCResponse.CRCPyRadMatrix ();"     | sed "s/\t/,/g;s/NULL//g" > datalocation/pyradiomics.csv
