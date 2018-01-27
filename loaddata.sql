@@ -20,7 +20,13 @@ insert ignore into RandomForestHCCResponse.crcmutations( MRN ,MutationalStatus ,
          JSON_UNQUOTE(eu.data->"$.""Study UID""") StudyUID,
          replace(substring_index( json_unquote(eu.data->'$."VEN Series UID"'), ':', 1),'{','') SeriesUIDVen,
          replace(substring_index( json_unquote(eu.data->'$."VEN Series UID"'), ':',-1),'}','') SeriesACQVen 
-         FROM ClinicalStudies.excelUpload eu where eu.uploadID = 83  and JSON_UNQUOTE(eu.data->"$.""Study UID""") is not null;
+         FROM ClinicalStudies.excelUpload eu where eu.uploadID = 84  and JSON_UNQUOTE(eu.data->"$.""Study UID""") is not null;
+
+-- error check duplicates
+insert into Metadata.Singular(id)
+(select si.id from Metadata.Singular si join(
+   select * from RandomForestHCCResponse.crcmutations cm where cm.StudyUID=cm.SeriesUIDVen
+                                            ) b );
 
 -- verify 14 WT  did not get deleted on insert
 insert into Metadata.Singular(id)
