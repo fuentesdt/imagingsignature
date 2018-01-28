@@ -24,3 +24,7 @@ install pandoc from  - https://github.com/jgm/pandoc/releases/tag/2.1.1
 R markdown classifier: 
 require(rmarkdown) 
 rmarkdown::render("datamatrixModeling_binary.R", "pdf_document")
+
+
+
+
