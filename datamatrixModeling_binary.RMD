@@ -2,13 +2,15 @@
 title: "Data Matrix Modeling"
 output: pdf_document
 params:
-  csvPath:  !r "datalocation/pyradiomicsout.csv"
-  target:   MutationalStatus
-  inputs:   !r readRDS("datalocation/features.RDS")
-  plot:              !r TRUE
-  leaveOneOut:       !r FALSE
-  rescale:           !r TRUE
+  csvPath:            datalocation/pyradiomics_modeling.csv
+  target:             MutationalStatus
+  positive_class:     mut
+  inputs:            !r NULL 
+  leaveOneOut:       !r TRUE
+  test_csv:           datalocation/pyradiomicsout_experimentalcohort.csv
+  rescale:           !r FALSE
   removeCorrelated:  !r TRUE
+  plot:              !r TRUE
   semisupervised:    !r FALSE
   kClusters:         !r as.numeric(9)
   genetic:           !r FALSE
@@ -16,17 +18,19 @@ params:
   univariate:        !r TRUE
 ---
 ## Version: BINARY CLASSIFIER
-Updated 12/18/2017 by E. Gates. See readme on github
 
-WIP: semi-supervised feature and genetic variable selection
+Update: Default behavior is now to take all non-target features as inpute
 
-WIP: custom model selection
+Usage: Edit preamble inputs to appropriate files. Then
+  Rscript -e "rmarkdown::render('datamatrixModeling_binary.RMD',output_file = 'myfile.pdf')"
 
-WIP: Compare to null model for imbalanced datasets
+TODO: semi-supervised feature and genetic variable selection
+
+TODO: Compare to null model for imbalanced datasets
+
+TODO: add order="hclust" to corrplot calls
 
 BUG: preprocess crashes when trying too many image features
-
-BUG: statement "No univariate significant values" not printing.
 
 Compiled: `r format(Sys.time(), "%Y-%b-%d %H:%M:%S")` 
 
@@ -52,10 +56,11 @@ invisible(lapply(libs, require,character.only=T))
 set.seed(25)
 
 #Load data
-datamatrix <- read.csv(params$csvPath, na.strings = "NULL")
+datamatrix <- read.csv(params$csvPath)
+allinputs <- params$inputs
 if(is.null(params$inputs)){
   print("No input columns specified, using all non-target columns")
-  params$inputs <- setdiff(names(datamatrix),params$target)
+  allinputs <- setdiff(names(datamatrix),params$target)
 } 
 
 #error check
@@ -92,19 +97,18 @@ modelparams <- list(tree = list(method  = "rpart",
 )
 
 # Partition + Trim dataset for convenience
-dsraw <- datamatrix[ c(params$target, params$inputs) ]
 
+dsraw <- datamatrix[ c(params$target, allinputs) ]
+
+# TODO option for train/test/vallidate split
 #set.seed(5)
 #inTrain <- createDataPartition(as.factor(datamatrix[,params$target]), 1, p=0.7)
 #  testing <- dsraw[-inTrain[[1]], ]
 #  dsraw <- dsraw[inTrain[[1]], ]
 
-
-
-
-
 ```
-## Pre-processing data: By default removes columns with zero variance and discards variables correlated >0.8
+## Pre-processing data: 
+By default removes columns with zero variance and discards variables correlated >0.8
 ```{r Pre-Processing Data, echo=FALSE}
 #  methods: zv removes zero-variance columns
 #           corr removes highly correlated columns
@@ -112,9 +116,10 @@ dsraw <- datamatrix[ c(params$target, params$inputs) ]
 
 
 #coerce to factor if needed
-if(!is.factor(dsraw[params$target])){
+if(!is.factor(dsraw[,params$target])){
   dsraw[params$target]<- as.factor(dsraw[,params$target])
   levels(dsraw[,params$target])<- c("control","case")
+  params$positive_class <- "case"
 }
 
 #check if binary
@@ -124,6 +129,11 @@ if(dsraw[,params$target] %>% levels %>% length !=2){
 
 #remove columns where all values are NA
 # REMOVE ROWS WITH NA
+
+narows <- sum(!complete.cases(dsraw))
+nacols <- sum(colSums(is.na(dsraw)) == nrow(dsraw))
+cat(sprintf("Removing %d rows for missing values\nRemoving %d NA columns",narows,nacols) )  
+
 dsraw <- dsraw[complete.cases(dsraw),colSums(is.na(dsraw))<nrow(dsraw)]
 
 #reduced input set
@@ -169,7 +179,7 @@ pp
 
 Default is Boruta and Wilcoxon test (P value cutoff 0.20/ `r length(Filteredinputs)`). Wilcoxon currently only tests numeric input variables
 
-```{r Performing Variable Selection, echo=FALSE, fig.width=7.5, fig.height=8}
+```{r Performing Variable Selection, echo=FALSE, warning=FALSE, fig.width=7.5, fig.height=8}
 
 # Variable selection 
 variableSelections <- list() #list(all=Filteredinputs)
@@ -202,37 +212,6 @@ correlations <- cor(Filter(is.numeric,ds[variableSelections$genetic]), use="pair
 
 }
 
-#boruta
-if(params$boruta){
-bor <- Boruta(x=ds[,Filteredinputs], y=ds[,params$target], maxRuns = 500)
-variableSelections$boruta <- names(ds[,Filteredinputs])[which(bor$finalDecision == "Confirmed")]
-
-print("Finished Boruta variable selection")
-print(bor)
-
-
-if(length(variableSelections$boruta) > 0 & params$plot){
-
-correlations <- cor(Filter(is.numeric,ds[variableSelections$boruta]), use="pairwise")
-   corrord <- order(correlations[1,])
-   correlations <- correlations[corrord,corrord]
-   corrplot(correlations,
-   title = "Correlations for Boruta method",
-   mar = c(1,2,2,0)  )
-
-
-#par(mfrow=c(length(variableSelections$boruta),1))
-for(iii in 1:length(variableSelections$boruta)){
-boxplot( as.formula( paste(variableSelections$boruta[[iii]], "~", params$target) ),
-         data=ds,
-         ylab=paste(variableSelections$boruta[[iii]]),
-         mar=c(12,1,0,0)
-       )
-}# end boxplots
-} #end if >0 variables
-} #end if params$boruta
-
-
 #univariate (currently only works for numeric variables)
 if(params$univariate){
 
@@ -244,9 +223,9 @@ pvals <- lapply(nums,
            test <- wilcox.test(formula, ds[, c(var, params$target)])
            test$p.value #could use 1-pchisq(test$statistic, df= test$parameter)
        })
+names(pvals) <- nums
 
-
-
+# Linear regression test
 #pvals <- lapply(nums,
 #      function(var) {
 #        formula    <- as.formula(paste(params$target, "~", var))
@@ -276,6 +255,40 @@ boxplot( as.formula( paste(variableSelections$univariate[[iii]], "~", params$tar
 }# end boxplots
 }
 }
+
+
+#boruta
+if(params$boruta){
+bor <- Boruta(x=ds[,Filteredinputs], y=ds[,params$target], maxRuns = 500)
+variableSelections$boruta <- names(ds[,Filteredinputs])[which(bor$finalDecision == "Confirmed")]
+
+print("Finished Boruta variable selection")
+print(bor)
+
+
+if(length(variableSelections$boruta) > 0 & params$plot){
+
+correlations <- cor(Filter(is.numeric,ds[variableSelections$boruta]), use="pairwise")
+   corrord <- order(correlations[1,])
+   correlations <- correlations[corrord,corrord]
+   corrplot(correlations,
+   title = "Correlations for Boruta method",
+   mar = c(1,2,2,0)  )
+
+
+#par(mfrow=c(length(variableSelections$boruta),1))
+for(iii in 1:length(variableSelections$boruta)){
+boxplot( as.formula( paste(variableSelections$boruta[[iii]], "~", params$target) ),
+         data=ds,
+         ylab=paste(variableSelections$boruta[[iii]]),
+         mar=c(12,1,0,0),
+         main=sprintf("Wilcoxon Rank Sum test P = %0.3e",pvals[variableSelections$boruta[[iii]]])
+       )
+}# end boxplots
+} #end if >0 variables
+} #end if params$boruta
+
+
 ```
 
 
@@ -284,15 +297,18 @@ boxplot( as.formula( paste(variableSelections$univariate[[iii]], "~", params$tar
 #print results and error handle if no significant variables
 if(params$univariate){
   if(length(variableSelections$univariate) == 0){ 
-    sprintf("No P values < %.5f", 0.2/length(nums))
+    cat(sprintf("No P values < %.5f\n", 0.2/length(nums)))
     variableSelections$univariate <- NULL
-    } else {
-      pvaltable <- data.frame(Variable = Filteredinputs[pvals< (0.2/length(nums)) ],
-                        P_value = unlist(pvals[pvals<(0.2/length(nums))] )
+    } 
+   
+    pvaltable <- data.frame(Variable = Filteredinputs[pvals<.2], 
+                        P_value = unlist(pvals[pvals<.2] )
                         )
-      kable(pvaltable, format = "markdown")
+    pvaltable <- pvaltable[order(pvaltable$P_value, decreasing=F),]
+    cat("Listing variables with WILCOXON RANK SUM test P value < 0.2")
+    kable(pvaltable, format = "markdown", row.names=F)
     }
-}
+
 ```
 
 
@@ -404,8 +420,12 @@ if(params$leaveOneOut){
     results <- subset(results, results[,names(modpars)[kkk]]==modpars[,kkk])
   }
   
-  print(caret::confusionMatrix(results$pred, reference = results$obs, positive="case"))
-  ROC1 <- roc(response=results$obs, predictor = results$case)
+  print(caret::confusionMatrix(results$pred, reference = results$obs, positive = params$positive_class))
+  ROC1 <- roc(response=results$obs,
+              predictor = results[,params$positive_class],
+              levels = c(setdiff(
+                levels(results$obs), params$positive_class),
+                         params$positive_class))
   print(ROC1)
   plot(ROC1, print.auc=T, print.auc.y = 0.2, print.auc.x = 0.5)
   # results is a frame with LOOCV data
@@ -414,6 +434,32 @@ if(params$leaveOneOut){
   kable(coords(roc=ROC1, x = "best", ret=c('threshold','sens', 'spec')))
   
 }
+```
+
+
+Testing best model on validataion cohort:
+```{r experimental cohort, echo = FALSE}
+
+if(!is.null(params$test_csv)){
+cat("Reading validation dataset:\n", params$test_csv)
+full_data <- read.csv(params$test_csv)
+
+bestModelInputs <- names(bestmod$trainingData[-1])
+
+cat(c("Best model using inputs:", paste(bestModelInputs,collapse="\n")))
+
+sub_data <- full_data[,c(bestModelInputs, params$target)]
+
+cat(sprintf("Number of cases ommitted for missing values %d out of %d\n", sum(!complete.cases(sub_data)), nrow(sub_data)))
+
+new_data = sub_data[complete.cases(sub_data),]
+
+preds <- predict(object=bestmod$finalModel,newdata = new_data,type="prob")
+
+kable(preds)
+} else {cat("No validation dataset provided")}
+
+
 ```
 
 
