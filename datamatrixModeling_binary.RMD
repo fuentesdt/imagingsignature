@@ -446,7 +446,7 @@ full_data <- read.csv(params$test_csv)
 
 bestModelInputs <- names(bestmod$trainingData[-1])
 
-cat(c("Best model using inputs:", paste(bestModelInputs,collapse="\n")))
+cat(c("Best model using inputs:", paste(bestModelInputs,collapse="\n"),"\n"))
 
 sub_data <- full_data[,c(bestModelInputs, params$target)]
 
