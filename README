@@ -25,4 +25,4 @@ R markdown classifier:
 
 Edit parameters in header of .RMD file, ex: csvPath = my_data.csv.
 Be mindful of single vs double quiotes in Rscript call
-Rscript -e "rmarkdown::render( 'dataMatrixModeling_binary.RMD', output_file = 'myfile.pdf')"
+Rscript -e "rmarkdown::render( 'datamatrixModeling_binary.RMD', output_file = 'myfile.pdf')"

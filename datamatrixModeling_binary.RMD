@@ -32,6 +32,18 @@ TODO: add order="hclust" to corrplot calls
 
 BUG: preprocess crashes when trying too many image features
 
+DOC: boxplot  https://www.r-bloggers.com/about-boxplot/ : the bottom and top of the box are always the 25th and 75th percentile (the lower and upper quartiles, respectively), and the band near the middle of the box is always the 50th percentile (the median). But the ends of the whiskers can represent several possible alternative values...”
+In R’s default boxplot{graphics} code,
+
+upper whisker = min(max(x), Q_3 + 1.5 * IQR) 
+lower whisker = max(min(x), Q_1 – 1.5 * IQR)
+
+where IQR = Q_3 – Q_1, the box length.
+So the upper whisker is located at the *smaller* of the maximum x value and Q_3 + 1.5 IQR, 
+whereas the lower whisker is located at the *larger* of the smallest x value and Q_1 – 1.5 IQR.
+
+
+
 Compiled: `r format(Sys.time(), "%Y-%b-%d %H:%M:%S")` 
 
 Target Variable: `r params$target`
@@ -284,6 +296,13 @@ boxplot( as.formula( paste(variableSelections$boruta[[iii]], "~", params$target)
          mar=c(12,1,0,0),
          main=sprintf("Wilcoxon Rank Sum test P = %0.3e",pvals[variableSelections$boruta[[iii]]])
        )
+ borutavariable= ds[variableSelections$boruta[[iii]]]
+ cat('WT summary\n')
+ print(summary(borutavariable[which(ds$MutationalStatus == 'WT'),]))
+ cat('\n')
+ cat('mut summary\n')
+ print(summary(borutavariable[which(ds$MutationalStatus == 'mut'),]))
+ cat('\n')
 }# end boxplots
 } #end if >0 variables
 } #end if params$boruta
