@@ -1,4 +1,5 @@
 #'   > source('datamatrixModeling_binary.R')
+#'   > rmarkdown::render("datamatrixModeling_binary.R", "pdf_document")
 #' ---	
 #' title: "Data Matrix Modeling"	
 #' output: pdf_document	
@@ -39,34 +40,33 @@
 #' everything else is ignored	
 #' 	
 #' 	
-#' 	
-rm(list=ls())
-options("width"=180)
-
-stopQuietly <- function(...)
-  {
-  blankMsg <- sprintf( "\r%s\r", paste( rep(" ", getOption( "width" ) - 1L ), collapse = " ") );
-  stop( simpleError( blankMsg ) );
-  } # stopQuietly()
-
-args <- commandArgs( trailingOnly = TRUE )
+#' rm(list=ls())
+#### options("width"=180)
+#### 
+#### stopQuietly <- function(...)
+####   {
+####   blankMsg <- sprintf( "\r%s\r", paste( rep(" ", getOption( "width" ) - 1L ), collapse = " ") );
+####   stop( simpleError( blankMsg ) );
+####   } # stopQuietly()
+#### 
+#### args <- commandArgs( trailingOnly = TRUE )
 args <- c( "datalocation/pyradiomicsout.csv","MutationalStatus")
-	
-if( length( args ) < 2 )
-  {
-  cat( "Usage: Rscript datamatrixModeling_binary.R inputFileList outputModelPrefix ",
-       "<numberOfThreads=4> <trainingPortion=1.0> <numberOfSamplesPerLabel=1000> ",
-       "<numberOfTreesPerThread=1000> <numberOfUniqueLabels=NA>", sep = "" )
-  stopQuietly()
-  }
-params <- new.env(parent = baseenv())
+#### 	
+#### if( length( args ) < 2 )
+####   {
+####   cat( "Usage: Rscript datamatrixModeling_binary.R inputFileList outputModelPrefix ",
+####        "<numberOfThreads=4> <trainingPortion=1.0> <numberOfSamplesPerLabel=1000> ",
+####        "<numberOfTreesPerThread=1000> <numberOfUniqueLabels=NA>", sep = "" )
+####   stopQuietly()
+####   }
+#### params <- new.env(parent = baseenv())
 
 params$csvPath         <-  args[1] 
 params$target          <-  args[2] 
 # TODO - FIXME - READ from cmd line ? 
 params$inputs          <-  readRDS("./features.RDS")	
 params$plot            <-  TRUE	
-params$leaveOneOut     <-  FALSE	
+params$leaveOneOut     <-  TRUE	
 params$rescale         <-  TRUE	
 params$removeCorrelated<-  TRUE	
 params$semisupervised  <-  FALSE	
@@ -76,6 +76,8 @@ params$boruta          <-  TRUE
 params$univariate      <-  TRUE	
 	
 	
+# install.packages("rmarkdown",repos='http://cran.us.r-project.org')
+#  install pandoc from  - https://github.com/jgm/pandoc/releases/tag/2.1.1
 # install.packages("caret",repos='http://cran.us.r-project.org')
 # install.packages("knitr",repos='http://cran.us.r-project.org')
 # install.packages("e1071",repos='http://cran.us.r-project.org')
@@ -86,7 +88,7 @@ libs <- c("caret", "kernlab", "knitr", "e1071", "magrittr", "rpart", "nnet", "pa
 "randomForest", "xgboost", "Boruta", "leaps", "MASS",	
 "ranger", "cluster", "subselect", "corrplot", "gridExtra","pROC")	
 	
-lapply(libs, require,character.only=T)
+invisible(lapply(libs, require,character.only=T))
 set.seed(25)	
 	
 #Load data	
@@ -155,7 +157,7 @@ dsraw <- datamatrix[ c(params$target, params$inputs) ]
 #coerce to factor if needed	
 if(!is.factor(dsraw[params$target])){	
   dsraw[params$target]<- as.factor(dsraw[,params$target])	
-  levels(dsraw[,params$target])<- c("control","case")	
+  #levels(dsraw[,params$target])<- c("control","case")	
 }	
 	
 #check if binary	
@@ -445,8 +447,8 @@ if(params$leaveOneOut){
     results <- subset(results, results[,names(modpars)[kkk]]==modpars[,kkk])	
   }	
   	
-  print(caret::confusionMatrix(results$pred, reference = results$obs, positive="case"))	
-  ROC1 <- roc(response=results$obs, predictor = results$case)	
+  print(caret::confusionMatrix(results$pred, reference = results$obs, positive="mut"))	
+  ROC1 <- roc(response=results$obs, predictor = results$mut)	
   print(ROC1)	
   plot(ROC1, print.auc=T, print.auc.y = 0.2, print.auc.x = 0.5)	
   # results is a frame with LOOCV data	

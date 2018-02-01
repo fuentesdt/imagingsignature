@@ -17,10 +17,12 @@ pyradiomicsbatch -v 5 datalocation/pyradiomics.csv datalocation/pyradiomicsout.c
 
 compute classifier
 =====
+
 install.packages("rmarkdown",repos='http://cran.us.r-project.org')
-install.packages("pandoc",repos='http://cran.us.r-project.org')
+install pandoc from  - https://github.com/jgm/pandoc/releases/tag/2.1.1
 
 R markdown classifier: 
+
 Edit parameters in header of .RMD file, ex: csvPath = my_data.csv.
 Be mindful of single vs double quiotes in Rscript call
 Rscript -e "rmarkdown::render( 'dataMatrixModeling_binary.RMD', output_file = 'myfile.pdf')"
