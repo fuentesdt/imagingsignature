@@ -28,7 +28,7 @@ TODO: semi-supervised feature and genetic variable selection
 
 TODO: Compare to null model for imbalanced datasets
 
-TODO: add order="hclust" to corrplot calls
+BUG: variable correlation plots rendered off page.
 
 BUG: preprocess crashes when trying too many image features
 
@@ -191,7 +191,7 @@ pp
 
 Default is Boruta and Wilcoxon test (P value cutoff 0.20/ `r length(Filteredinputs)`). Wilcoxon currently only tests numeric input variables
 
-```{r Performing Variable Selection, echo=FALSE, warning=FALSE, fig.width=7.5, fig.height=8}
+```{r Performing Variable Selection, echo=FALSE, warning=FALSE, fig.width=8, fig.height=8}
 
 # Variable selection 
 variableSelections <- list() #list(all=Filteredinputs)
@@ -246,15 +246,16 @@ names(pvals) <- nums
 #      })
 
 
-variableSelections$univariate <- setdiff(Filteredinputs, nums[pvals > 0.2/length(nums)]) #discard variables above threshold
+variableSelections$univariate <- setdiff(Filteredinputs, nums[pvals > 0.05]) #discard variables above threshold
 
 if(variableSelections$univariate %>% length > 1 & params$plot){
 correlations <- cor(Filter(is.numeric,ds[variableSelections$univariate]), use="pairwise")
-   corrord <- order(correlations[1,])
-   correlations <- correlations[corrord,corrord]
+#   corrord <- order(correlations[1,])
+#   correlations <- correlations[corrord,corrord]
    corrplot(correlations,
    title = "Correlations for Univariate method",
-   mar = c(1,2,2,0)  )
+   mar = c(1,2,2,0),
+   order="hclust"  )
    
 
 #par(mfrow=c(length(variableSelections$univariate),1))
@@ -262,11 +263,21 @@ for(iii in 1:length(variableSelections$univariate)){
 boxplot( as.formula( paste(variableSelections$univariate[[iii]], "~", params$target) ),
          data=ds,
          ylab=paste(variableSelections$univariate[[iii]]),
+         main=sprintf("Wilcoxon Rank Sum test P = %0.3e",pvals[variableSelections$univariate[[iii]]]),
          mar=c(12,1,0,0)
        )
-}# end boxplots
-}
-}
+
+ univariable= ds[variableSelections$univariate[[iii]]]
+ cat(setdiff(levels(ds[,params$target]),params$positive_class), 'summary\n')
+ print(summary(univariable[which(ds[,params$target] != params$positive_class ),]))
+ cat('\n')
+ cat(params$positive_class, 'summary\n')
+ print(summary(univariable[which(ds[,params$target] == params$positive_class ),]))
+ cat('\n')
+}# end boxplot
+} #end if >0 variables
+} #end if params$univariate
+
 
 
 #boruta
@@ -281,11 +292,12 @@ print(bor)
 if(length(variableSelections$boruta) > 0 & params$plot){
 
 correlations <- cor(Filter(is.numeric,ds[variableSelections$boruta]), use="pairwise")
-   corrord <- order(correlations[1,])
-   correlations <- correlations[corrord,corrord]
+#   corrord <- order(correlations[1,])
+#   correlations <- correlations[corrord,corrord]
    corrplot(correlations,
    title = "Correlations for Boruta method",
-   mar = c(1,2,2,0)  )
+   mar = c(1,2,2,0),
+   order = "hclust"  )
 
 
 #par(mfrow=c(length(variableSelections$boruta),1))
@@ -297,11 +309,11 @@ boxplot( as.formula( paste(variableSelections$boruta[[iii]], "~", params$target)
          main=sprintf("Wilcoxon Rank Sum test P = %0.3e",pvals[variableSelections$boruta[[iii]]])
        )
  borutavariable= ds[variableSelections$boruta[[iii]]]
- cat('WT summary\n')
- print(summary(borutavariable[which(ds$MutationalStatus == 'WT'),]))
+ cat(setdiff(levels(ds[,params$target]),params$positive_class), 'summary\n')
+ print(summary(borutavariable[which(ds[,params$target] != params$positive_class ),]))
  cat('\n')
- cat('mut summary\n')
- print(summary(borutavariable[which(ds$MutationalStatus == 'mut'),]))
+ cat(params$positive_class, 'summary\n')
+ print(summary(borutavariable[which(ds[,params$target] == params$positive_class ),]))
  cat('\n')
 }# end boxplots
 } #end if >0 variables
@@ -456,7 +468,7 @@ if(params$leaveOneOut){
 ```
 
 
-Testing best model on validataion cohort:
+## Testing best model on validataion cohort:
 ```{r experimental cohort, echo = FALSE}
 
 if(!is.null(params$test_csv)){
@@ -480,18 +492,4 @@ kable(preds)
 
 
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
