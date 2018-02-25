@@ -4,11 +4,15 @@ use RandomForestHCCResponse;
 DROP TABLE IF EXISTS RandomForestHCCResponse.crcmutations;
 CREATE TABLE RandomForestHCCResponse.crcmutations(
   MRN	             int not null,
-  MutationalStatus             text not null,
+  MutationalStatus     VARCHAR(32)     not null,
+  MutationalStatusAPC  VARCHAR(32)     not null,
+  MutationalStatusKras VARCHAR(32)     not null,
+  MutationalStatusp53  VARCHAR(32)     not null,
   ImageDate	             DATE         NULL COMMENT 'Study Date',
-  StudyUID            VARCHAR(256)  not NULL  COMMENT 'study UID'              ,
+  StudyUID            VARCHAR(256)    not NULL  COMMENT 'study UID'              ,
   SeriesUIDVen        VARCHAR(256)         NULL  COMMENT 'series UID'             ,
   SeriesACQVen        VARCHAR(256)         NULL  COMMENT 'series acquisition time',
+  NotRun                    int            NULL  COMMENT 'error checking ',
   PRIMARY KEY (StudyUID) 
 );
 
@@ -21,6 +25,15 @@ insert ignore into RandomForestHCCResponse.crcmutations( MRN ,MutationalStatus ,
          replace(substring_index( json_unquote(eu.data->'$."VEN Series UID"'), ':', 1),'{','') SeriesUIDVen,
          replace(substring_index( json_unquote(eu.data->'$."VEN Series UID"'), ':',-1),'}','') SeriesACQVen 
          FROM ClinicalStudies.excelUpload eu where eu.uploadID = 84  and JSON_UNQUOTE(eu.data->"$.""Study UID""") is not null;
+
+-- fixme need single table
+update RandomForestHCCResponse.crcmutations rf
+  join ClinicalStudies.excelUpload eu   on (eu.uploadID=87 and rf.MRN = JSON_UNQUOTE(eu.data->"$.""MRN""") )
+   SET rf.MutationalStatusAPC=JSON_UNQUOTE(eu.data->"$.""APC""")   ,
+       rf.MutationalStatusKras=JSON_UNQUOTE(eu.data->"$.""Kras""") , 
+       rf.MutationalStatusp53 =JSON_UNQUOTE(eu.data->"$.""p53""") , 
+       rf.NotRun  = JSON_UNQUOTE(eu.data->"$.""Not Run""") ;
+
 
 -- error check duplicates
 insert into Metadata.Singular(id)
@@ -65,6 +78,11 @@ BEGIN
                                 separator ' ') )
     from RandomForestHCCResponse.crcmutations rf
     where rf.SeriesACQVen is not null and (rf.MutationalStatus != 'WT' and rf.MutationalStatus != 'mut');
+    select concat("CRCMETNOTRUN =", group_concat(
+           CONCAT_WS('/',rf.mrn,  REPLACE(rf.ImageDate, '-', ''), rf.StudyUID  ) 
+                                separator ' ') )
+    from RandomForestHCCResponse.crcmutations rf
+    where rf.NotRun =1; 
 
     select concat("NUMRAWVEN =",count(rf.SeriesACQVen)) from RandomForestHCCResponse.crcmutations rf where rf.SeriesACQVen is not null and rf.ImageDate is not null ;
     select concat("RAWVEN  =", group_concat( distinct
