@@ -1,4 +1,4 @@
--- mysql --local-infile < loaddata.sql
+-- mysql < loaddata.sql
 
 use RandomForestHCCResponse;
 DROP TABLE IF EXISTS RandomForestHCCResponse.crcmutations;
@@ -40,6 +40,12 @@ insert into Metadata.Singular(id)
 (select si.id from Metadata.Singular si join(
    select * from RandomForestHCCResponse.crcmutations cm where cm.StudyUID=cm.SeriesUIDVen
                                             ) b );
+
+insert into Metadata.Singular(id)
+(select si.id from Metadata.Singular si join(
+   select count(cm.mrn) numgrp from RandomForestHCCResponse.crcmutations cm group by cm.studyuid
+                                            ) b  where b.numgrp=2 );
+
 
 -- verify 14 WT  did not get deleted on insert
 insert into Metadata.Singular(id)
@@ -110,7 +116,7 @@ CREATE PROCEDURE RandomForestHCCResponse.CRCPyRadMatrix
 (  )
 BEGIN
    -- select  a.mrn, a.TIMEID, sd.studyInstanceUID, lk.location,  
-  select cm.mrn,cm.imagedate ,cm.MutationalStatus, 
+  select cm.mrn,cm.imagedate ,cm.MutationalStatus, cm.MutationalStatusAPC, cm.MutationalStatusKras, cm.MutationalStatusp53,
          concat_WS('/','/rsrch1/ip/dtfuentes/github/imagingsignature/ImageDatabase',cm.mrn,REPLACE(cm.ImageDate, '-', ''),cm.StudyUID,'/Ven.raw.nii.gz') Image , 
          concat_WS('/','/rsrch1/ip/dtfuentes/github/imagingsignature/ImageDatabase',cm.mrn,REPLACE(cm.ImageDate, '-', ''),cm.StudyUID,'/Cascade/LABELSNN.nii.gz') Mask, 
          lk.labelID Label
