@@ -17,9 +17,12 @@ CREATE TABLE RandomForestHCCResponse.crcmutations(
 );
 
 -- ignore duplicates
-insert ignore into RandomForestHCCResponse.crcmutations( MRN ,MutationalStatus ,ImageDate	 ,StudyUID      ,SeriesUIDVen ,SeriesACQVen)
+insert ignore into RandomForestHCCResponse.crcmutations( MRN ,MutationalStatus ,MutationalStatusAPC , MutationalStatusKras, MutationalStatusp53 , ImageDate	 ,StudyUID      ,SeriesUIDVen ,SeriesACQVen)
  SELECT JSON_UNQUOTE(eu.data->"$.""MRN""") MRN,
-         JSON_UNQUOTE(data->"$.""Triple status""") MutationalStatus , 
+         JSON_UNQUOTE(data->"$.""Triple status""") MutationalStatus    , 
+         JSON_UNQUOTE(data->"$.""Triple status""") MutationalStatusAPC , 
+         JSON_UNQUOTE(data->"$.""Triple status""") MutationalStatusKras, 
+         JSON_UNQUOTE(data->"$.""Triple status""") MutationalStatusp53 , 
          JSON_UNQUOTE(eu.data->"$.""Image Date""") ImageDate,
          JSON_UNQUOTE(eu.data->"$.""Study UID""") StudyUID,
          replace(substring_index( json_unquote(eu.data->'$."VEN Series UID"'), ':', 1),'{','') SeriesUIDVen,
