@@ -15,7 +15,7 @@ params:
   kClusters:         !r as.numeric(9)
   genetic:           !r FALSE
   boruta:            !r TRUE
-  univariate:        !r FALSE
+  univariate:        !r TRUE
 ---
 ## Version: BINARY CLASSIFIER
 
@@ -27,7 +27,7 @@ Usage: Edit preamble inputs to appropriate files. Then
 TODO: default syntax :set syntax=rmd
 
 TODO: @egates1  how do I load these from  R shell ? rmarkdown::render( 'datamatrixModeling_binary.RMD')  ?  manually loading
-params = list( csvPath=            "datalocation/pyradiomicsout.csv", target=             "MutationalStatusAPC", positive_class=     "mut", inputs=               NULL , leaveOneOut=          TRUE, test_csv=             NULL, rescale=              FALSE, removeCorrelated=     TRUE, plot=                 TRUE, semisupervised=       FALSE, kClusters=            as.numeric(9), genetic=              FALSE, boruta=               TRUE, univariate=           FALSE )
+params = list( csvPath=            "datalocation/pyradiomicsout.csv", target=             "MutationalStatusAPC", positive_class=     "mut", inputs=               NULL , leaveOneOut=          TRUE, test_csv=             NULL, rescale=              FALSE, removeCorrelated=     TRUE, plot=                 TRUE, semisupervised=       FALSE, kClusters=            as.numeric(9), genetic=              FALSE, boruta=               TRUE, univariate=           TRUE )
 
 TODO: semi-supervised feature and genetic variable selection
 
@@ -58,9 +58,9 @@ Target and inputs are column headings in csv file,
 everything else is ignored
 
 
-```{r Loading Packages + Data, echo=FALSE, warning=FALSE, message=FALSE}
+```{r Loading Packages + Data, echo=TRUE, warning=FALSE, message=FALSE}
 
-
+options("width"=180)
 # WIP reduce number of packages
 libs <- c("caret", "kernlab", "knitr", "e1071", "magrittr", "rpart", "nnet", "parallel",
 "randomForest", "xgboost", "Boruta", "leaps", "MASS",
@@ -80,6 +80,7 @@ if(!is.null(params$inputs)){
 
 #error check
 if(is.null(params$target)) stop("No target specified")
+stop(sprintf("target %s specified",params$target))
 
 # Set model parameters
 modelparams <- list(tree = list(method  = "rpart",
@@ -164,7 +165,7 @@ pp <- preProcess(dsraw[inputs], method = "zv")
 ds <- cbind(predict(pp, newdata = dsraw[inputs]),dsraw[params$target])
 Filteredinputs <- setdiff(names(ds), params$target)
 
-pp <- preProcess(predict(pp, newdata = ds[Filteredinputs]), method = ppMethods, cutoff=0.8)
+pp <- preProcess(predict(pp, newdata = ds[Filteredinputs]), method = ppMethods, cutoff=0.7)
 
 #get reduced input set/dataset
 ds <- cbind(predict(pp, newdata = ds[Filteredinputs]),ds[params$target])
