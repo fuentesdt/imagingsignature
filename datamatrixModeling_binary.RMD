@@ -79,8 +79,8 @@ if(!is.null(params$inputs)){
 } 
 
 #error check
+print(sprintf("target %s specified",params$target))
 if(is.null(params$target)) stop("No target specified")
-stop(sprintf("target %s specified",params$target))
 
 # Set model parameters
 modelparams <- list(tree = list(method  = "rpart",
@@ -113,7 +113,6 @@ modelparams <- list(tree = list(method  = "rpart",
 )
 
 # Partition + Trim dataset for convenience
-
 dsraw <- datamatrix[ c(params$target, inputcols ) ]
 
 # TODO option for train/test/vallidate split
@@ -242,15 +241,6 @@ pvals <- lapply(nums,
        })
 names(pvals) <- nums
 
-# Linear regression test
-#pvals <- lapply(nums,
-#      function(var) {
-#        formula    <- as.formula(paste(params$target, "~", var))
-#           logit <- glm(formula, data=ds[, c(var,params$target)], family=binomial )
-#           coef(summary(logit))[2,4]
-#      })
-
-
 variableSelections$univariate <- setdiff(Filteredinputs, nums[pvals > 0.05]) #discard variables above threshold
 
 if(variableSelections$univariate %>% length > 1 & params$plot){
@@ -287,7 +277,7 @@ boxplot( as.formula( paste(variableSelections$univariate[[iii]], "~", params$tar
 
 #boruta
 if(params$boruta){
-bor <- Boruta(x=ds[,Filteredinputs], y=ds[,params$target], maxRuns = 500)
+bor <- Boruta(x=ds[,Filteredinputs], y=ds[,params$target], pValue=.35)
 variableSelections$boruta <- names(ds[,Filteredinputs])[which(bor$finalDecision == "Confirmed")]
 
 print("Finished Boruta variable selection")

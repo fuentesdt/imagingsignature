@@ -27,7 +27,7 @@ R markdown classifier:
 
 Edit parameters in header of .RMD file, ex: csvPath = my_data.csv.
 Be mindful of single vs double quiotes in Rscript call
-Rscript -e "rmarkdown::render( 'datamatrixModeling_binary.RMD', output_file = 'myfileAPC.pdf',params = list( csvPath='datalocation/pyradiomicsout.csv', target='MutationalStatusAPC', positive_class='mut', inputs=NULL , leaveOneOut=TRUE, test_csv=NULL, rescale=FALSE, removeCorrelated=TRUE, plot=TRUE, semisupervised=FALSE, kClusters=as.numeric(9), genetic=FALSE, boruta=TRUE, univariate=TRUE ))"
+Rscript -e "rmarkdown::render( 'datamatrixModeling_binary.RMD', output_file = 'myfileAPC.pdf',params = list( csvPath='datalocation/pyradiomicsout.csv', target='MutationalStatusAPC', positive_class='mut', inputs=NULL , leaveOneOut=TRUE, test_csv=NULL, rescale=FALSE, removeCorrelated=TRUE, plot=TRUE, semisupervised=FALSE, kClusters=as.numeric(9), genetic=FALSE, boruta=FALSE, univariate=TRUE ))"
 Rscript -e "rmarkdown::render( 'datamatrixModeling_binary.RMD', output_file = 'myfileKras.pdf',params = list( csvPath='datalocation/pyradiomicsout.csv', target='MutationalStatusKras', positive_class='mut', inputs=NULL , leaveOneOut=TRUE, test_csv=NULL, rescale=FALSE, removeCorrelated=TRUE, plot=TRUE, semisupervised=FALSE, kClusters=as.numeric(9), genetic=FALSE, boruta=TRUE, univariate=TRUE ))"
 Rscript -e "rmarkdown::render( 'datamatrixModeling_binary.RMD', output_file = 'myfilep53.pdf',params = list( csvPath='datalocation/pyradiomicsout.csv', target='MutationalStatusp53', positive_class='mut', inputs=NULL , leaveOneOut=TRUE, test_csv=NULL, rescale=FALSE, removeCorrelated=TRUE, plot=TRUE, semisupervised=FALSE, kClusters=as.numeric(9), genetic=FALSE, boruta=TRUE, univariate=TRUE ))"
 
