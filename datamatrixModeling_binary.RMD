@@ -16,18 +16,17 @@ params:
   genetic:           !r FALSE
   boruta:            !r FALSE
   univariate:        !r TRUE
+  unipValThresh:     !r 0.05
 ---
 ## Version: BINARY CLASSIFIER
 
 Update: Default behavior is now to take all non-target features as inpute
 
-Usage: Edit preamble inputs to appropriate files. Then
-  Rscript -e "rmarkdown::render('datamatrixModeling_binary.RMD',output_file = 'myfile.pdf')"
+DOC: Usage - Rscript -e "rmarkdown::render( 'datamatrixModeling_binary.RMD', output_file = 'myfile.pdf',params = list( csvPath='datalocation/pyradiomics_modeling.csv', target='MutationalStatus', positive_class='mut', inputs=NULL , leaveOneOut=TRUE, test_csv='datalocation/pyradiomicsout_experimentalcohort.csv', rescale=FALSE, removeCorrelated=TRUE, plot=TRUE, semisupervised=FALSE, kClusters=as.numeric(9), genetic=FALSE, boruta=TRUE, univariate=TRUE, unipValThresh=0.05 ))"
+
+DOC: Debugging - set params in R shell:  params = list( csvPath='datalocation/pyradiomics_modeling.csv', target='MutationalStatus', positive_class='mut', inputs=NULL , leaveOneOut=TRUE, test_csv='datalocation/pyradiomicsout_experimentalcohort.csv', rescale=FALSE, removeCorrelated=TRUE, plot=TRUE, semisupervised=FALSE, kClusters=as.numeric(9), genetic=FALSE, boruta=TRUE, univariate=TRUE, unipValThresh=0.05 ),  copy block by block
 
 TODO: default syntax :set syntax=rmd
-
-TODO: @egates1  how do I load these from  R shell ? rmarkdown::render( 'datamatrixModeling_binary.RMD')  ?  manually loading
-params = list( csvPath=            "datalocation/pyradiomicsout.csv", target=             "MutationalStatusAPC", positive_class=     "mut", inputs=               NULL , leaveOneOut=          TRUE, test_csv=             NULL, rescale=              FALSE, removeCorrelated=     TRUE, plot=                 TRUE, semisupervised=       FALSE, kClusters=            as.numeric(9), genetic=              FALSE, boruta=               TRUE, univariate=           TRUE )
 
 TODO: semi-supervised feature and genetic variable selection
 
@@ -164,7 +163,7 @@ pp <- preProcess(dsraw[inputs], method = "zv")
 ds <- cbind(predict(pp, newdata = dsraw[inputs]),dsraw[params$target])
 Filteredinputs <- setdiff(names(ds), params$target)
 
-pp <- preProcess(predict(pp, newdata = ds[Filteredinputs]), method = ppMethods, cutoff=0.7)
+pp <- preProcess(predict(pp, newdata = ds[Filteredinputs]), method = ppMethods, cutoff=0.8)
 
 #get reduced input set/dataset
 ds <- cbind(predict(pp, newdata = ds[Filteredinputs]),ds[params$target])
@@ -241,7 +240,7 @@ pvals <- lapply(nums,
        })
 names(pvals) <- nums
 
-variableSelections$univariate <- setdiff(Filteredinputs, nums[pvals > 0.05]) #discard variables above threshold
+variableSelections$univariate <- setdiff(Filteredinputs, nums[pvals > params$unipValThresh]) #discard variables above threshold
 
 if(variableSelections$univariate %>% length > 1 & params$plot){
 correlations <- cor(Filter(is.numeric,ds[variableSelections$univariate]), use="pairwise")
