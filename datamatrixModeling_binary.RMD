@@ -283,7 +283,7 @@ print("Finished Boruta variable selection")
 print(bor)
 
 
-if(length(variableSelections$boruta) > 0 & params$plot){
+if(length(variableSelections$boruta) > 1 & params$plot){
 
 correlations <- cor(Filter(is.numeric,ds[variableSelections$boruta]), use="pairwise")
 #   corrord <- order(correlations[1,])
@@ -292,8 +292,10 @@ correlations <- cor(Filter(is.numeric,ds[variableSelections$boruta]), use="pairw
    title = "Correlations for Boruta method",
    mar = c(1,2,2,0),
    order = "hclust"  )
+}
 
 
+if(length(variableSelections$boruta) > 0 & params$plot){
 #par(mfrow=c(length(variableSelections$boruta),1))
 for(iii in 1:length(variableSelections$boruta)){
 boxplot( as.formula( paste(variableSelections$boruta[[iii]], "~", params$target) ),
