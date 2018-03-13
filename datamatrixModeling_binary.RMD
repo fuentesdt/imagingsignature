@@ -58,8 +58,9 @@ Target and inputs are column headings in csv file,
 everything else is ignored
 
 
-```{r Loading Packages + Data, echo=TRUE, warning=FALSE, message=FALSE}
+```{r Loading Packages + Data, echo=TRUE, warning=FALSE, message=TRUE}
 
+params
 options("width"=180)
 # WIP reduce number of packages
 libs <- c("caret", "kernlab", "knitr", "e1071", "magrittr", "rpart", "nnet", "parallel",
