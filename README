@@ -15,7 +15,7 @@ process image features
 =====
 pyradiomicsbatch -v 5 datalocation/pyradiomics.csv datalocation/pyradiomicsout.csv
 head -n 1 datalocation/pyradiomicsout.csv > datalocation/pyradiomicsout_experimentalcohort.csv; grep "Experimental cohort" datalocation/pyradiomicsout.csv >>   datalocation/pyradiomicsout_experimentalcohort.csv
-head -n 1 datalocation/pyradiomicsout.csv > datalocation/pyradiomics_modeling.csv             ; grep -v "Experimental cohort" datalocation/pyradiomicsout.csv >>  datalocation/pyradiomics_modeling.csv
+grep -v "Experimental cohort" datalocation/pyradiomicsout.csv >>  datalocation/pyradiomics_modeling.csv
 
 compute classifier
 =====
@@ -25,9 +25,10 @@ install pandoc from  - https://github.com/jgm/pandoc/releases/tag/2.1.1
 
 R markdown classifier: 
 
-Edit parameters in header of .RMD file, ex: csvPath = my_data.csv.
-Be mindful of single vs double quiotes in Rscript call
+
+Rscript -e "rmarkdown::render( 'datamatrixModeling_binary.RMD', output_file = 'myfile.pdf',params = list( csvPath='datalocation/pyradiomics_modeling.csv', target='MutationalStatus', positive_class='mut', inputs=NULL , leaveOneOut=TRUE, test_csv='datalocation/pyradiomics_experimentalcohort.csv', rescale=FALSE, removeCorrelated=TRUE, plot=TRUE, semisupervised=FALSE, kClusters=as.numeric(9), genetic=FALSE, boruta=TRUE, univariate=TRUE ))"
+
 Rscript -e "rmarkdown::render( 'datamatrixModeling_binary.RMD', output_file = 'myfileAPC.pdf',params = list( csvPath='datalocation/pyradiomicsout.csv', target='MutationalStatusAPC', positive_class='mut', inputs=NULL , leaveOneOut=TRUE, test_csv=NULL, rescale=FALSE, removeCorrelated=TRUE, plot=TRUE, semisupervised=FALSE, kClusters=as.numeric(9), genetic=FALSE, boruta=FALSE, univariate=TRUE ))"
 Rscript -e "rmarkdown::render( 'datamatrixModeling_binary.RMD', output_file = 'myfileKras.pdf',params = list( csvPath='datalocation/pyradiomicsout.csv', target='MutationalStatusKras', positive_class='mut', inputs=NULL , leaveOneOut=TRUE, test_csv=NULL, rescale=FALSE, removeCorrelated=TRUE, plot=TRUE, semisupervised=FALSE, kClusters=as.numeric(9), genetic=FALSE, boruta=TRUE, univariate=TRUE ))"
-Rscript -e "rmarkdown::render( 'datamatrixModeling_binary.RMD', output_file = 'myfilep53.pdf',params = list( csvPath='datalocation/pyradiomicsout.csv', target='MutationalStatusp53', positive_class='mut', inputs=NULL , leaveOneOut=TRUE, test_csv=NULL, rescale=FALSE, removeCorrelated=TRUE, plot=TRUE, semisupervised=FALSE, kClusters=as.numeric(9), genetic=FALSE, boruta=TRUE, univariate=TRUE ))"
+Rscript -e "rmarkdown::render( 'datamatrixModeling_binary.RMD', output_file = 'myfilep53.pdf',params = list( csvPath='datalocation/pyradiomicsout.csv', target='MutationalStatusp53', positive_class='mut', inputs=NULL , leaveOneOut=TRUE, test_csv=NULL, rescale=FALSE, removeCorrelated=TRUE, plot=TRUE, semisupervised=FALSE, kClusters=as.numeric(9), genetic=FALSE, boruta=FALSE, univariate=TRUE ))"
 

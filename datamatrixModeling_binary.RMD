@@ -3,7 +3,7 @@ title: "Data Matrix Modeling"
 output: pdf_document
 params:
   csvPath:            datalocation/pyradiomicsout.csv
-  target:             MutationalStatusAPC
+  target:             MutationalStatusp53
   positive_class:     mut
   inputs:            !r NULL 
   leaveOneOut:       !r TRUE
@@ -14,7 +14,7 @@ params:
   semisupervised:    !r FALSE
   kClusters:         !r as.numeric(9)
   genetic:           !r FALSE
-  boruta:            !r TRUE
+  boruta:            !r FALSE
   univariate:        !r TRUE
 ---
 ## Version: BINARY CLASSIFIER
@@ -83,11 +83,10 @@ print(sprintf("target %s specified",params$target))
 if(is.null(params$target)) stop("No target specified")
 
 # Set model parameters
-modelparams <- list(tree = list(method  = "rpart",
+modelparams <- list(#tree = list(method  = "rpart",
                     #            #tuneGrid = data.frame(.cp = 0.01),
-                                 parms   = list(split="information")
-                               ),
-                                          
+                    #            parms   = list(split="information")
+                    #          ),
                     forest = list(method      = "rf",
                                   ntree       = 500,
                                  #tuneGrid    = data.frame(.mtry = mtry),
@@ -98,15 +97,15 @@ modelparams <- list(tree = list(method  = "rpart",
                                  ),
                      #na.action removed since "na.action" is used in caret
                     
-                     xgboost = list(method = "xgbLinear"),
+                     #xgboost = list(method = "xgbLinear"),
  
-                     nnet = list(method = "nnet",
-                                 #tuneGrid=data.frame(.size = 10, .decay = 0),
-                                 #linout  = TRUE,
-                                 skip    = TRUE,
-                                 MaxNWts = 10000,
-                                 trace   = FALSE,
-                                 maxit   = 100),
+                    # nnet = list(method = "nnet",
+                    #             #tuneGrid=data.frame(.size = 10, .decay = 0),
+                    #             #linout  = TRUE,
+                    #             skip    = TRUE,
+                    #             MaxNWts = 10000,
+                    #             trace   = FALSE,
+                    #             maxit   = 100),
                      
                      svm = list(method = "svmRadial"),
                      logit = list(method = "glm")
