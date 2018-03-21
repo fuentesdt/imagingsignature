@@ -11,14 +11,17 @@ datalocation/dependencies: loaddata.sql
 	$(MYSQL) --local-infile < $< 
 	$(MYSQL) -sNre "call RandomForestHCCResponse.CRCMutDependencies();"  > $@
 
-nifti:  $(RAWVEN)
+#nifti:  $(RAWVEN)
 #nifti:   $(addprefix $(WORKDIR)/,$(addsuffix /Ven.raw.nii.gz,$(CRCMETTRAIN)))
 #nifti:   $(addprefix $(WORKDIR)/,$(addsuffix /Ven.raw.nii.gz,$(CRCMETTEST)))
-#nnmodels:     $(addprefix $(WORKDIR)/,$(addsuffix /Cascade/LABELSNN.nii.gz,$(CRCMETTRAIN)))
-nnmodels:   $(addprefix $(WORKDIR)/,$(addsuffix /Cascade/LABELSNN.nii.gz,$(CRCMETTRAIN))) $(addprefix $(WORKDIR)/,$(addsuffix /Cascade/LABELSNN.nii.gz,$(CRCMETTEST)))
+nifti:   $(addprefix $(WORKDIR)/,$(addsuffix /Ven.raw.nii.gz,$(CRCMETNOTRUN)))
+nnmodels:     $(addprefix $(WORKDIR)/,$(addsuffix /Cascade/LABELSNN.nii.gz,$(CRCMETNOTRUN)))
+#nnmodels:   $(addprefix $(WORKDIR)/,$(addsuffix /Cascade/LABELSNN.nii.gz,$(CRCMETTRAIN))) $(addprefix $(WORKDIR)/,$(addsuffix /Cascade/LABELSNN.nii.gz,$(CRCMETTEST)))
 
 checkxfer:  
-	ls $(addprefix $(WORKDIR)/,$(addsuffix /Ven.raw.nii.gz,$(CRCMETTRAIN))) | wc
+	ls $(addprefix $(WORKDIR)/,$(addsuffix /Ven.raw.nii.gz,$(CRCMETNOTRUN))) | wc
+checknn:  
+	ls $(addprefix $(WORKDIR)/,$(addsuffix /Cascade/LABELSNN.nii.gz,$(CRCMETNOTRUN))) | wc
 
 $(WORKDIR)/%/raw.xfer:
 	mkdir -p $(@D)
