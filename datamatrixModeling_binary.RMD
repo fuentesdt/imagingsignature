@@ -112,7 +112,13 @@ modelparams <- list(#tree = list(method  = "rpart",
 )
 
 # Partition + Trim dataset for convenience
-dsraw <- datamatrix[ c(params$target, inputcols ) ]
+if (params$target == "CountMutation") {
+  CountMutation <- as.factor(as.numeric(datamatrix$MutationalStatusKras) + as.numeric(datamatrix$MutationalStatusAPC) + as.numeric(datamatrix$MutationalStatusp53) - 3)
+  levels(CountMutation) <- c("None", "One","Two","Three")
+  dsraw <- cbind(CountMutation , datamatrix[  inputcols  ])
+} else {
+  dsraw <- datamatrix[ c(params$target, inputcols ) ]
+}
 
 # TODO option for train/test/vallidate split
 #set.seed(5)

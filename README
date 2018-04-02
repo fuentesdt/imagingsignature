@@ -28,6 +28,8 @@ R markdown classifier:
 
 Rscript -e "rmarkdown::render( 'datamatrixModeling_binary.RMD', output_file = 'myfile.pdf',params = list( csvPath='datalocation/pyradiomics_modeling.csv', target='MutationalStatus', positive_class='mut', inputs=NULL , leaveOneOut=TRUE, test_csv='datalocation/pyradiomicsout_experimentalcohort.csv', rescale=FALSE, removeCorrelated=TRUE, plot=TRUE, semisupervised=FALSE, kClusters=as.numeric(9), genetic=FALSE, boruta=TRUE, univariate=TRUE, unipValThresh=0.05 ))"
 
+Rscript -e "rmarkdown::render( 'datamatrixModeling_binary.RMD', output_file = 'myfileCountMutation.pdf',params = list( csvPath='datalocation/pyradiomicsout.csv', target='CountMutation', positive_class='mut', inputs=NULL , leaveOneOut=TRUE, test_csv=NULL, rescale=FALSE, removeCorrelated=TRUE, plot=TRUE, semisupervised=FALSE, kClusters=as.numeric(9), genetic=FALSE, boruta=TRUE, univariate=TRUE, unipValThresh=0.05 ))"
+
 Rscript -e "rmarkdown::render( 'datamatrixModeling_binary.RMD', output_file = 'myfileKras.pdf',params = list( csvPath='datalocation/pyradiomicsout.csv', target='MutationalStatusKras', positive_class='mut', inputs=NULL , leaveOneOut=TRUE, test_csv=NULL, rescale=FALSE, removeCorrelated=TRUE, plot=TRUE, semisupervised=FALSE, kClusters=as.numeric(9), genetic=FALSE, boruta=TRUE, univariate=TRUE, unipValThresh=0.05 ))"
 
 Rscript -e "rmarkdown::render( 'datamatrixModeling_binary.RMD', output_file = 'myfileAPC.pdf',params = list( csvPath='datalocation/pyradiomicsout.csv', target='MutationalStatusAPC', positive_class='mut', inputs=NULL , leaveOneOut=TRUE, test_csv=NULL, rescale=FALSE, removeCorrelated=TRUE, plot=TRUE, semisupervised=FALSE, kClusters=as.numeric(9), genetic=FALSE, boruta=FALSE, univariate=TRUE, unipValThresh=0.15 ))"
