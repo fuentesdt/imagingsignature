@@ -86,17 +86,17 @@ insert into Metadata.Singular(id)
 
 
 -- @thomas-nguyen-3 dataqa
--- verify 14 WT  did not get deleted on insert
+-- verify 13 WT
 insert into Metadata.Singular(id)
 (select si.id from Metadata.Singular si join(
    select count( rf.StudyUID) numtruth from RandomForestHCCResponse.crcmutations rf where rf.MutationalStatus = 'WT'
-                                   ) b on b.numtruth !=14 );
+                                   ) b on b.numtruth !=13 );
 
--- verify 24 mut  did not get deleted on insert
+-- verify 20 mut 
 insert into Metadata.Singular(id)
 (select si.id from Metadata.Singular si join(
    select count( rf.StudyUID) numtruth from RandomForestHCCResponse.crcmutations rf where rf.MutationalStatus = 'mut'
-                                   ) b on b.numtruth !=24 );
+                                   ) b on b.numtruth !=20 );
 
 -- use dicomheaders as dflt study date for each
 update RandomForestHCCResponse.crcmutations rf
