@@ -104,6 +104,9 @@ update RandomForestHCCResponse.crcmutations rf
    SET rf.ImageDate=coalesce(sd.StudyDate,rf.ImageDate);
 
 
+DELETE from RandomForestHCCResponse.crcmutations where StudyUID = 'NULL';
+
+
 DROP PROCEDURE IF EXISTS RandomForestHCCResponse.CRCMutDependencies;
 DELIMITER //
 CREATE PROCEDURE RandomForestHCCResponse.CRCMutDependencies
