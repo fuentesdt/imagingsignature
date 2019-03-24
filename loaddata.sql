@@ -3,16 +3,16 @@
 use RandomForestHCCResponse;
 DROP TABLE IF EXISTS RandomForestHCCResponse.crcmutations;
 CREATE TABLE RandomForestHCCResponse.crcmutations(
-  MRN	             int not null,
-  MutationalStatus     VARCHAR(32)     not null,
-  MutationalStatusAPC  VARCHAR(32)     not null,
-  MutationalStatusKras VARCHAR(32)     not null,
-  MutationalStatusp53  VARCHAR(32)     not null,
-  seriespath           VARCHAR(256)    not NULL  COMMENT 'data path'              ,
-  ImageDate	             DATE         NULL COMMENT 'Study Date',
-  StudyUID            VARCHAR(256)    not NULL  COMMENT 'study UID'              ,
-  SeriesUIDVen        VARCHAR(256)         NULL  COMMENT 'series UID'             ,
-  SeriesACQVen        VARCHAR(256)         NULL  COMMENT 'series acquisition time',
+  MutationalStatus     VARCHAR(32)     not null  COMMENT 'required: output'                 ,
+  MRN	                        int    not null  COMMENT 'required: pt UID '                ,
+  ImageDate	             DATE           NULL COMMENT 'required: Study Date'             ,
+  StudyUID            VARCHAR(256)     not NULL  COMMENT 'required: study UID'              ,
+  SeriesUIDVen        VARCHAR(256)         NULL  COMMENT 'required: series UID'             ,
+  SeriesACQVen        VARCHAR(256)         NULL  COMMENT 'required: series acquisition time',
+  seriespath           VARCHAR(256)    not NULL  COMMENT 'required: data path'              ,
+  MutationalStatusAPC  VARCHAR(32)         null  COMMENT 'optional: ',
+  MutationalStatusKras VARCHAR(32)         null  COMMENT 'optional: ',
+  MutationalStatusp53  VARCHAR(32)         null  COMMENT 'optional: ',
   NotRun                    int            NULL  COMMENT 'error checking ',
   PRIMARY KEY (StudyUID) 
 );
