@@ -13,7 +13,7 @@ datalocation/dependencies: loaddata.sql
 	$(MYSQL) -sNre "call RandomForestHCCResponse.CRCMutDependencies();"  > $@
 
 #nifti:  $(RAWVEN)
-nifti:   $(addprefix $(WORKDIR)/,$(addsuffix /Ven.raw.nii.gz,$(CRCMETTRAIN))) $(addprefix $(WORKDIR)/,$(addsuffix /Ven.raw.nii.gz,$(CRCMETTEST)))
+nifti:   $(addprefix $(WORKDIR)/,$(addsuffix /Ven.raw.nii.gz,$(CRCMETTRAIN))) 
 #nifti:   $(addprefix $(WORKDIR)/,$(addsuffix /Ven.raw.nii.gz,$(CRCMETTRAIN)))
 #nifti:   $(addprefix $(WORKDIR)/,$(addsuffix /Ven.raw.nii.gz,$(CRCMETTEST)))
 #nifti:   $(addprefix $(WORKDIR)/,$(addsuffix /Ven.raw.nii.gz,$(CRCMETNOTRUN)))

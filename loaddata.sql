@@ -9,7 +9,7 @@ CREATE TABLE RandomForestHCCResponse.crcmutations(
   StudyUID            VARCHAR(256)     not NULL  COMMENT 'required: study UID'              ,
   SeriesUIDVen        VARCHAR(256)         NULL  COMMENT 'required: series UID'             ,
   SeriesACQVen        VARCHAR(256)         NULL  COMMENT 'required: series acquisition time',
-  seriespath           VARCHAR(256)    not NULL  COMMENT 'required: data path'              ,
+  seriespath           VARCHAR(256)   GENERATED ALWAYS AS (concat_WS('/','/FUS4/IPVL_research',mrn,REPLACE(ImageDate, '-', ''),StudyUID,SeriesUIDVen) ) comment 'FUS4 Location @thomas-nguyen-3: do these directory exist',
   MutationalStatusAPC  VARCHAR(32)         null  COMMENT 'optional: ',
   MutationalStatusKras VARCHAR(32)         null  COMMENT 'optional: ',
   MutationalStatusp53  VARCHAR(32)         null  COMMENT 'optional: ',
@@ -18,13 +18,8 @@ CREATE TABLE RandomForestHCCResponse.crcmutations(
 );
 
 -- @thomas-nguyen-3  - missing data
-insert ignore into RandomForestHCCResponse.crcmutations( MRN ,MutationalStatus ,MutationalStatusAPC , MutationalStatusKras, MutationalStatusp53 , seriespath, SeriesACQVen,ImageDate	 ,StudyUID      ,SeriesUIDVen )
-select e.*,
-SUBSTRING_INDEX(SUBSTRING_INDEX(e.SeriesPath, "/",5),"/",-1) ImageDate,
-SUBSTRING_INDEX(SUBSTRING_INDEX(e.SeriesPath, "/",6),"/",-1) StudyUID,
-SUBSTRING_INDEX(SUBSTRING_INDEX(e.SeriesPath, "/",7),"/",-1) SeriesUID
-from 
-( select aq.mrn, aq.MutationalStatus , aq.APC, aq.KRAS, aq.TP53,aq.seriespath,  aq.acquisitiontime
+insert ignore into RandomForestHCCResponse.crcmutations( MRN ,MutationalStatus ,MutationalStatusAPC , MutationalStatusKras, MutationalStatusp53 , SeriesACQVen,ImageDate	 ,StudyUID      ,SeriesUIDVen )
+select aq.mrn, aq.MutationalStatus , aq.APC, aq.KRAS, aq.TP53,aq.acquisitiontime, aq.StudyDate, aq.StudyUID, aq.SeriesUID
 from (
 SELECT uploadID, 
 JSON_UNQUOTE(data->"$.""MRN""") "MRN", 
@@ -66,11 +61,12 @@ JSON_UNQUOTE(data->"$.""Date of recurrence""") "Date of recurrence",
 JSON_UNQUOTE(data->"$.""Age""") "Age", 
 JSON_UNQUOTE(data->"$.""Sex""") "Sex", 
 JSON_UNQUOTE(data->"$.""Race""") "Race", 
-coalesce(NULLIF(JSON_UNQUOTE(data->"$.""PV_SeriesPath"""),"#N/A"),JSON_UNQUOTE(data->"$.""ART_SeriesPath""")) SeriesPath, 
-JSON_UNQUOTE(data->"$.""PV_ImagesPath""") "PV_ImagesPath", 
-coalesce(NULLIF(JSON_UNQUOTE(data->"$.""PV_acquisitionTime"""),"#N/A"), JSON_UNQUOTE(data->"$.""ART_acquisitionTime"""))     acquisitionTime, 
-JSON_UNQUOTE(data->"$.""ART_ImagesPath""") "ART_ImagesPath" 
-FROM ClinicalStudies.excelUpload where uploadID = 115) aq ) e ;
+coalesce(NULLIF(JSON_UNQUOTE(data->"$.""PV_acquisitionTime"""), "#N/A"), JSON_UNQUOTE(data->"$.""ART_acquisitionTime""")) acquisitionTime, 
+coalesce(NULLIF(JSON_UNQUOTE(data->"$.""PV_StudyDate""")      , "#N/A"), JSON_UNQUOTE(data->"$.""ART_StudyDate""")) StudyDate , 
+coalesce(NULLIF(JSON_UNQUOTE(data->"$.""PV_StudyUID""")       , "#N/A"), JSON_UNQUOTE(data->"$.""ART_StudyUID"""))  StudyUID , 
+coalesce(NULLIF(JSON_UNQUOTE(data->"$.""PV_SeriesUID""")      , "#N/A"), JSON_UNQUOTE(data->"$.""ART_SeriesUID""")) SeriesUID , 
+coalesce(NULLIF(JSON_UNQUOTE(data->"$.""PV_SOP""")            , "#N/A"), JSON_UNQUOTE(data->"$.""ART_SOP"""))       SOP   
+FROM ClinicalStudies.excelUpload where uploadID = 117) aq;
 
 select * from RandomForestHCCResponse.crcmutations;
 
