@@ -306,7 +306,12 @@ if (options.imagefile != None):
       # paste tumor prediction back to slice
       pred2tmp = to_scale(pred2prob , (y2-y1+1,x2-x1+1) )
       pred2tmpstep1 = np.zeros( (388,388)   , dtype=np.float32)
-      pred2tmpstep1[ y1:y2+1,x1:x2+1 ] = pred2tmp 
+      print y1, y2, x1, x2
+      try:
+        pred2tmpstep1[ y1:y2+1,x1:x2+1 ] = pred2tmp 
+      except ValueError: # Hack boundary
+        print "FIXME: boundary" 
+        pred2tmpstep1[ y1:y2+1,x1-1:x2 ] = pred2tmp 
 
       # scale back to original size 
       imgtmp = to_scale(pred2tmpstep1, segmentation.shape[0:2])
